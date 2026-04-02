@@ -1,0 +1,80 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+}
+
+.navbar-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--color-text);
+  transition: color 0.2s;
+}
+
+.navbar-brand svg {
+  color: var(--color-brand-light);
+}
+
+.navbar-brand:hover {
+  color: var(--color-brand-light);
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navbar-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.navbar-link:hover {
+  color: var(--color-text);
+  background: var(--color-surface-lighter);
+}
+
+.navbar-link.active {
+  color: var(--color-brand-light);
+  background: rgba(99, 102, 241, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .navbar-link span {
+    display: none;
+  }
+
+  .navbar-link {
+    padding: 8px 10px;
+  }
+
+  #btn-logout span {
+    display: none;
+  }
+}
