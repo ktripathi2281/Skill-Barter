@@ -63,7 +63,27 @@
   color: white;
   font-weight: 700;
   flex-shrink: 0;
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+}
+
+.unread-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-danger);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  animation: pulse-soft 2s infinite;
 }
 
 .conv-avatar img {
@@ -124,6 +144,76 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.chat-header-info {
+  flex: 1;
+}
+
+/* Trade Action Buttons */
+.trade-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-accept {
+  background: var(--color-success);
+  color: white;
+  border: none;
+}
+
+.btn-accept:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.btn-reject {
+  background: transparent;
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+}
+
+.btn-reject:hover {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn-complete {
+  background: linear-gradient(135deg, var(--color-brand), #8b5cf6);
+  color: white;
+  border: none;
+}
+
+.btn-complete:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.trade-status-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.trade-status-label.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+}
+
+.trade-status-label.cancelled {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
+}
+
+.badge-danger-badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--color-danger);
 }
 
 .chat-back-btn {

@@ -100,9 +100,61 @@ const updateConversationStatus = async (req, res) => {
   }
 };
 
+// @route   GET /api/conversations/unread
+// @desc    Get unread message counts for all conversations
+const getUnreadCounts = async (req, res) => {
+  try {
+    const counts = await Message.aggregate([
+      {
+        $match: {
+          readBy: { $ne: req.user._id },
+        },
+      },
+      {
+        $group: {
+          _id: '$conversation',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Convert to a map: { conversationId: count }
+    const unreadMap = {};
+    counts.forEach((c) => {
+      unreadMap[c._id.toString()] = c.count;
+    });
+
+    res.json(unreadMap);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @route   PATCH /api/conversations/:id/read
+// @desc    Mark all messages in a conversation as read by current user
+const markAsRead = async (req, res) => {
+  try {
+    await Message.updateMany(
+      {
+        conversation: req.params.id,
+        readBy: { $ne: req.user._id },
+      },
+      {
+        $addToSet: { readBy: req.user._id },
+      }
+    );
+
+    res.json({ message: 'Messages marked as read' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createConversation,
   getConversations,
   getMessages,
   updateConversationStatus,
+  getUnreadCounts,
+  markAsRead,
 };

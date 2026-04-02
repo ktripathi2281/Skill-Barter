@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import api from '../../api/axios';
-import { Send, ArrowLeft, MessageCircle, Circle } from 'lucide-react';
+import { Send, ArrowLeft, MessageCircle, Circle, Check, X, Handshake } from 'lucide-react';
 import './Chat.css';
 
 const Chat = () => {
@@ -18,30 +18,41 @@ const Chat = () => {
   const [activeConversation, setActiveConversation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [typing, setTyping] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // Fetch all conversations
+  // Fetch all conversations and unread counts
   useEffect(() => {
-    const fetchConversations = async () => {
+    const fetchData = async () => {
       try {
-        const { data } = await api.get('/conversations');
-        setConversations(data);
+        const [convRes, unreadRes] = await Promise.all([
+          api.get('/conversations'),
+          api.get('/conversations/unread'),
+        ]);
+        setConversations(convRes.data);
+        setUnreadCounts(unreadRes.data);
       } catch (err) {
         console.error('Failed to fetch conversations:', err);
       } finally {
         setLoading(false);
       }
     };
-    fetchConversations();
+    fetchData();
   }, []);
 
   // If a conversationId is provided in URL, load that conversation
   useEffect(() => {
-    if (conversationId) {
-      loadConversation(conversationId);
+    if (conversationId && conversations.length > 0) {
+      const conv = conversations.find((c) => c._id === conversationId);
+      if (conv) {
+        setActiveConversation(conv);
+        loadConversation(conversationId);
+      } else {
+        loadConversation(conversationId);
+      }
     }
-  }, [conversationId]);
+  }, [conversationId, conversations]);
 
   // Socket listeners
   useEffect(() => {
@@ -50,11 +61,19 @@ const Chat = () => {
     socket.on('new_message', (message) => {
       if (message.conversation === activeConversation?._id) {
         setMessages((prev) => [...prev, message]);
+        // Mark as read immediately since we're viewing this conversation
+        api.patch(`/conversations/${message.conversation}/read`).catch(() => {});
+      } else {
+        // Increment unread count for other conversations
+        setUnreadCounts((prev) => ({
+          ...prev,
+          [message.conversation]: (prev[message.conversation] || 0) + 1,
+        }));
       }
       // Update conversation list's last message
       setConversations((prev) =>
         prev.map((c) =>
-          c._id === message.conversation
+          c._id === (message.conversation?._id || message.conversation)
             ? { ...c, lastMessage: message.text, lastMessageAt: new Date() }
             : c
         )
@@ -92,6 +111,14 @@ const Chat = () => {
 
       const conv = conversations.find((c) => c._id === id);
       setActiveConversation(conv || { _id: id });
+
+      // Mark messages as read
+      await api.patch(`/conversations/${id}/read`);
+      setUnreadCounts((prev) => {
+        const updated = { ...prev };
+        delete updated[id];
+        return updated;
+      });
 
       // Join the socket room
       if (socket) {
@@ -132,7 +159,6 @@ const Chat = () => {
 
     socket.emit('typing', { conversationId: activeConversation._id });
 
-    // Clear previous timeout
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
@@ -140,6 +166,21 @@ const Chat = () => {
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('stop_typing', { conversationId: activeConversation._id });
     }, 1000);
+  };
+
+  const handleUpdateStatus = async (status) => {
+    if (!activeConversation) return;
+    try {
+      const { data } = await api.patch(`/conversations/${activeConversation._id}/status`, { status });
+      // Update active conversation
+      setActiveConversation((prev) => ({ ...prev, status: data.status }));
+      // Update in the list
+      setConversations((prev) =>
+        prev.map((c) => (c._id === activeConversation._id ? { ...c, status: data.status } : c))
+      );
+    } catch (err) {
+      console.error('Failed to update status:', err);
+    }
   };
 
   const getOtherParticipant = (conv) => {
@@ -167,6 +208,7 @@ const Chat = () => {
           ) : (
             conversations.map((conv) => {
               const other = getOtherParticipant(conv);
+              const unread = unreadCounts[conv._id] || 0;
               return (
                 <div
                   key={conv._id}
@@ -179,6 +221,9 @@ const Chat = () => {
                     ) : (
                       <span>{other?.name?.charAt(0)?.toUpperCase() || '?'}</span>
                     )}
+                    {unread > 0 && (
+                      <span className="unread-badge">{unread > 9 ? '9+' : unread}</span>
+                    )}
                   </div>
                   <div className="conv-info">
                     <div className="conv-name">{other?.name || 'Unknown User'}</div>
@@ -187,7 +232,7 @@ const Chat = () => {
                     </div>
                   </div>
                   <div className="conv-meta">
-                    <span className={`badge badge-${conv.status === 'active' ? 'success' : 'brand'}`}>
+                    <span className={`badge badge-${conv.status === 'active' ? 'success' : conv.status === 'completed' ? 'brand' : conv.status === 'cancelled' ? 'danger-badge' : 'accent'}`}>
                       {conv.status}
                     </span>
                   </div>
@@ -225,6 +270,53 @@ const Chat = () => {
                   <span className="typing-indicator">
                     <Circle size={6} fill="var(--color-success)" color="var(--color-success)" />
                     typing...
+                  </span>
+                )}
+              </div>
+
+              {/* Trade Action Buttons */}
+              <div className="trade-actions">
+                {activeConversation.status === 'pending' && (
+                  <>
+                    <button
+                      className="btn btn-accept btn-sm"
+                      onClick={() => handleUpdateStatus('active')}
+                      title="Accept Trade"
+                      id="btn-accept-trade"
+                    >
+                      <Check size={14} />
+                      Accept
+                    </button>
+                    <button
+                      className="btn btn-reject btn-sm"
+                      onClick={() => handleUpdateStatus('cancelled')}
+                      title="Reject Trade"
+                      id="btn-reject-trade"
+                    >
+                      <X size={14} />
+                      Reject
+                    </button>
+                  </>
+                )}
+                {activeConversation.status === 'active' && (
+                  <button
+                    className="btn btn-complete btn-sm"
+                    onClick={() => handleUpdateStatus('completed')}
+                    title="Mark Trade as Complete"
+                    id="btn-complete-trade"
+                  >
+                    <Handshake size={14} />
+                    Complete
+                  </button>
+                )}
+                {activeConversation.status === 'completed' && (
+                  <span className="trade-status-label completed">
+                    <Check size={14} /> Trade Completed
+                  </span>
+                )}
+                {activeConversation.status === 'cancelled' && (
+                  <span className="trade-status-label cancelled">
+                    <X size={14} /> Trade Cancelled
                   </span>
                 )}
               </div>
