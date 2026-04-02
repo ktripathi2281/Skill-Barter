@@ -37,14 +37,15 @@ export const AuthProvider = ({ children }) => {
       email: data.email,
       bio: data.bio,
       avatar: data.avatar,
+      location: data.location,
     };
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     return data;
   };
 
-  const register = async (name, email, password) => {
-    const { data } = await api.post('/auth/register', { name, email, password });
+  const register = async (name, email, password, city) => {
+    const { data } = await api.post('/auth/register', { name, email, password, city });
     localStorage.setItem('accessToken', data.accessToken);
     localStorage.setItem('refreshToken', data.refreshToken);
 
@@ -52,6 +53,7 @@ export const AuthProvider = ({ children }) => {
       _id: data._id,
       name: data.name,
       email: data.email,
+      location: { city },
     };
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);

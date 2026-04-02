@@ -1,14 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { ArrowLeftRight, Mail, Lock, UserPlus, AlertCircle } from 'lucide-react';
+import { ArrowLeftRight, Mail, Lock, UserPlus, AlertCircle, MapPin } from 'lucide-react';
 import './Auth.css';
+
+const CITIES = [
+  'Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai',
+  'Pune', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow',
+  'Chandigarh', 'Indore', 'Bhopal', 'Nagpur', 'Kochi',
+  'Gurgaon', 'Noida', 'Coimbatore', 'Visakhapatnam', 'Other',
+];
 
 const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [city, setCity] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
@@ -31,7 +39,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(name, email, password);
+      await register(name, email, password, city);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -121,6 +129,25 @@ const Register = () => {
                 required
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="register-city">
+              <MapPin size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+              Your City
+            </label>
+            <select
+              id="register-city"
+              className="form-select"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+            >
+              <option value="">Select your city</option>
+              {CITIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
 
           <button

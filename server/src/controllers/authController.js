@@ -16,7 +16,7 @@ const generateRefreshToken = (userId) => {
 // @route   POST /api/auth/register
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, city } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -24,8 +24,17 @@ const register = async (req, res) => {
       return res.status(400).json({ message: 'An account with this email already exists' });
     }
 
-    // Create new user
-    const user = await User.create({ name, email, password });
+    // Create new user with location
+    const user = await User.create({
+      name,
+      email,
+      password,
+      location: {
+        type: 'Point',
+        coordinates: [0, 0],
+        city: city || '',
+      },
+    });
 
     // Generate tokens
     const accessToken = generateAccessToken(user._id);
@@ -78,6 +87,7 @@ const login = async (req, res) => {
       email: user.email,
       bio: user.bio,
       avatar: user.avatar,
+      location: user.location,
       accessToken,
       refreshToken,
     });

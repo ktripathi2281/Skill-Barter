@@ -24,6 +24,30 @@
   color: var(--color-surface-lighter);
 }
 
+/* City Filter */
+.city-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0.75rem;
+}
+
+.city-select {
+  width: auto;
+  min-width: 180px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.proximity-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.proximity-hint strong {
+  color: var(--color-brand-light);
+}
+
 /* Category Filter */
 .category-filter {
   display: flex;

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import { Search, MapPin, MessageCircle, Filter } from 'lucide-react';
 import './Browse.css';
@@ -9,11 +10,20 @@ const CATEGORIES = [
   'Fitness', 'Photography', 'Writing', 'Marketing', 'Finance', 'Other',
 ];
 
+const CITIES = [
+  'All Cities', 'Bangalore', 'Mumbai', 'Delhi', 'Hyderabad', 'Chennai',
+  'Pune', 'Kolkata', 'Ahmedabad', 'Jaipur', 'Lucknow',
+  'Chandigarh', 'Indore', 'Bhopal', 'Nagpur', 'Kochi',
+  'Gurgaon', 'Noida', 'Coimbatore', 'Visakhapatnam',
+];
+
 const Browse = () => {
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCity, setSelectedCity] = useState('All Cities');
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
@@ -21,6 +31,7 @@ const Browse = () => {
       const params = {};
       if (selectedCategory !== 'All') params.category = selectedCategory;
       if (searchTerm) params.search = searchTerm;
+      if (selectedCity !== 'All Cities') params.city = selectedCity;
 
       const { data } = await api.get('/users/browse', { params });
       setUsers(data);
@@ -33,7 +44,7 @@ const Browse = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedCity]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -75,6 +86,26 @@ const Browse = () => {
         />
         <button type="submit" className="btn btn-primary btn-sm">Search</button>
       </form>
+
+      {/* City Filter */}
+      <div className="city-filter" id="city-filter">
+        <MapPin size={16} className="text-muted" />
+        <select
+          className="form-select city-select"
+          value={selectedCity}
+          onChange={(e) => { setSelectedCity(e.target.value); setLoading(true); }}
+          id="select-city-filter"
+        >
+          {CITIES.map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        {selectedCity === 'All Cities' && user?.location?.city && (
+          <span className="proximity-hint">
+            Showing people in <strong>{user.location.city}</strong> first
+          </span>
+        )}
+      </div>
 
       {/* Category Filter */}
       <div className="category-filter" id="category-filter">

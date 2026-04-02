@@ -46,53 +46,57 @@ const updateProfile = async (req, res) => {
 };
 
 // @route   GET /api/users/browse
-// @desc    Browse users with optional filters
+// @desc    Browse users with optional filters, sorted by proximity (same city first)
 const browseUsers = async (req, res) => {
   try {
-    const { category, search, lng, lat, maxDistance } = req.query;
+    const { category, search, city } = req.query;
 
     let filter = { _id: { $ne: req.user._id } }; // Exclude self
-    let query;
 
-    // If location coordinates are provided, find nearby users
-    if (lng && lat) {
-      filter.location = {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [parseFloat(lng), parseFloat(lat)],
-          },
-          $maxDistance: parseInt(maxDistance) || 50000, // Default 50km
-        },
-      };
+    // If a specific city is selected, filter by that city
+    if (city) {
+      filter['location.city'] = { $regex: new RegExp(`^${city}$`, 'i') };
     }
 
-    query = User.find(filter)
+    const users = await User.find(filter)
       .populate('skillsOffered')
       .populate('skillsWanted')
-      .select('-refreshToken');
+      .select('-refreshToken')
+      .limit(50);
 
-    const users = await query.limit(50);
-
-    // If a category or search filter is provided, filter in-memory
-    // (for a production app, you'd use aggregation pipelines)
     let results = users;
 
+    // Filter by skill category
     if (category) {
-      results = results.filter((user) =>
-        user.skillsOffered.some((s) => s.category === category)
+      results = results.filter((u) =>
+        u.skillsOffered.some((s) => s.category === category)
       );
     }
 
+    // Filter by search term
     if (search) {
       const searchLower = search.toLowerCase();
       results = results.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchLower) ||
-          user.skillsOffered.some((s) =>
+        (u) =>
+          u.name.toLowerCase().includes(searchLower) ||
+          u.skillsOffered.some((s) =>
             s.name.toLowerCase().includes(searchLower)
           )
       );
+    }
+
+    // Sort: same city as current user first, then others
+    if (!city) {
+      const currentUser = await User.findById(req.user._id);
+      const myCity = currentUser?.location?.city?.toLowerCase() || '';
+
+      if (myCity) {
+        results.sort((a, b) => {
+          const aMatch = (a.location?.city?.toLowerCase() || '') === myCity ? 0 : 1;
+          const bMatch = (b.location?.city?.toLowerCase() || '') === myCity ? 0 : 1;
+          return aMatch - bMatch;
+        });
+      }
     }
 
     res.json(results);
