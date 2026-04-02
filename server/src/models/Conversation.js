@@ -22,6 +22,12 @@ const conversationSchema = new mongoose.Schema(
       enum: ['pending', 'active', 'completed', 'cancelled'],
       default: 'pending',
     },
+    acceptedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     lastMessage: {
       type: String,
       default: '',

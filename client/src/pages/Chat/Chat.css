@@ -211,6 +211,12 @@
   color: var(--color-danger);
 }
 
+.trade-status-label.waiting {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-accent);
+  animation: pulse-soft 2s infinite;
+}
+
 .badge-danger-badge {
   background: rgba(239, 68, 68, 0.15);
   color: var(--color-danger);

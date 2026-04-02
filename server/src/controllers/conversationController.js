@@ -77,7 +77,7 @@ const getMessages = async (req, res) => {
 };
 
 // @route   PATCH /api/conversations/:id/status
-// @desc    Update conversation status
+// @desc    Update conversation status (two-way acceptance)
 const updateConversationStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -91,7 +91,28 @@ const updateConversationStatus = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    conversation.status = status;
+    if (status === 'active') {
+      // "Accept" — add this user to acceptedBy
+      if (!conversation.acceptedBy.includes(req.user._id)) {
+        conversation.acceptedBy.push(req.user._id);
+      }
+
+      // Check if BOTH participants have accepted
+      const bothAccepted = conversation.participants.every((p) =>
+        conversation.acceptedBy.some((a) => a.toString() === p.toString())
+      );
+
+      if (bothAccepted) {
+        conversation.status = 'active';
+      }
+      // Otherwise status stays 'pending' until the other person also accepts
+    } else if (status === 'cancelled') {
+      // Either party can cancel immediately
+      conversation.status = 'cancelled';
+    } else if (status === 'completed') {
+      conversation.status = 'completed';
+    }
+
     await conversation.save();
 
     res.json(conversation);

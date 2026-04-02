@@ -172,11 +172,11 @@ const Chat = () => {
     if (!activeConversation) return;
     try {
       const { data } = await api.patch(`/conversations/${activeConversation._id}/status`, { status });
-      // Update active conversation
-      setActiveConversation((prev) => ({ ...prev, status: data.status }));
+      // Update active conversation with full response (includes acceptedBy)
+      setActiveConversation((prev) => ({ ...prev, status: data.status, acceptedBy: data.acceptedBy }));
       // Update in the list
       setConversations((prev) =>
-        prev.map((c) => (c._id === activeConversation._id ? { ...c, status: data.status } : c))
+        prev.map((c) => (c._id === activeConversation._id ? { ...c, status: data.status, acceptedBy: data.acceptedBy } : c))
       );
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -276,28 +276,42 @@ const Chat = () => {
 
               {/* Trade Action Buttons */}
               <div className="trade-actions">
-                {activeConversation.status === 'pending' && (
-                  <>
-                    <button
-                      className="btn btn-accept btn-sm"
-                      onClick={() => handleUpdateStatus('active')}
-                      title="Accept Trade"
-                      id="btn-accept-trade"
-                    >
-                      <Check size={14} />
-                      Accept
-                    </button>
-                    <button
-                      className="btn btn-reject btn-sm"
-                      onClick={() => handleUpdateStatus('cancelled')}
-                      title="Reject Trade"
-                      id="btn-reject-trade"
-                    >
-                      <X size={14} />
-                      Reject
-                    </button>
-                  </>
-                )}
+                {activeConversation.status === 'pending' && (() => {
+                  const iHaveAccepted = activeConversation.acceptedBy?.some(
+                    (id) => id.toString() === user._id
+                  );
+
+                  if (iHaveAccepted) {
+                    return (
+                      <span className="trade-status-label waiting">
+                        <Check size={14} /> Waiting for other party...
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <button
+                        className="btn btn-accept btn-sm"
+                        onClick={() => handleUpdateStatus('active')}
+                        title="Accept Trade"
+                        id="btn-accept-trade"
+                      >
+                        <Check size={14} />
+                        Accept
+                      </button>
+                      <button
+                        className="btn btn-reject btn-sm"
+                        onClick={() => handleUpdateStatus('cancelled')}
+                        title="Reject Trade"
+                        id="btn-reject-trade"
+                      >
+                        <X size={14} />
+                        Reject
+                      </button>
+                    </>
+                  );
+                })()}
                 {activeConversation.status === 'active' && (
                   <button
                     className="btn btn-complete btn-sm"
