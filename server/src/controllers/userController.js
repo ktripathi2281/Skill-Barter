@@ -46,7 +46,7 @@ const updateProfile = async (req, res) => {
 };
 
 // @route   GET /api/users/browse
-// @desc    Browse users with optional filters, sorted by proximity (same city first)
+// @desc    Browse users with match categorization and proximity sorting
 const browseUsers = async (req, res) => {
   try {
     const { category, search, city } = req.query;
@@ -57,6 +57,18 @@ const browseUsers = async (req, res) => {
     if (city) {
       filter['location.city'] = { $regex: new RegExp(`^${city}$`, 'i') };
     }
+
+    // Fetch current user's skills for match computation
+    const currentUser = await User.findById(req.user._id)
+      .populate('skillsOffered')
+      .populate('skillsWanted');
+
+    const myOfferedCategories = new Set(
+      currentUser.skillsOffered.map((s) => s.category.toLowerCase())
+    );
+    const myWantedCategories = new Set(
+      currentUser.skillsWanted.map((s) => s.category.toLowerCase())
+    );
 
     const users = await User.find(filter)
       .populate('skillsOffered')
@@ -85,21 +97,51 @@ const browseUsers = async (req, res) => {
       );
     }
 
-    // Sort: same city as current user first, then others
-    if (!city) {
-      const currentUser = await User.findById(req.user._id);
-      const myCity = currentUser?.location?.city?.toLowerCase() || '';
+    // Compute match type for each user
+    const myCity = currentUser?.location?.city?.toLowerCase() || '';
 
-      if (myCity) {
-        results.sort((a, b) => {
-          const aMatch = (a.location?.city?.toLowerCase() || '') === myCity ? 0 : 1;
-          const bMatch = (b.location?.city?.toLowerCase() || '') === myCity ? 0 : 1;
-          return aMatch - bMatch;
-        });
+    const enrichedResults = results.map((u) => {
+      const userObj = u.toObject();
+
+      const theirOfferedCategories = u.skillsOffered.map((s) => s.category.toLowerCase());
+      const theirWantedCategories = u.skillsWanted.map((s) => s.category.toLowerCase());
+
+      // Do they offer something I want?
+      const theyFulfillMe = theirOfferedCategories.some((cat) => myWantedCategories.has(cat));
+      // Do I offer something they want?
+      const iFulfillThem = theirWantedCategories.some((cat) => myOfferedCategories.has(cat));
+
+      if (theyFulfillMe && iFulfillThem) {
+        userObj.matchType = 'perfect';
+      } else if (theyFulfillMe || iFulfillThem) {
+        userObj.matchType = 'partial';
+      } else {
+        userObj.matchType = 'none';
       }
-    }
 
-    res.json(results);
+      return userObj;
+    });
+
+    // Sort: perfect matches first, then partial, then none
+    // Within each group, same city first
+    const matchOrder = { perfect: 0, partial: 1, none: 2 };
+
+    enrichedResults.sort((a, b) => {
+      // First by match type
+      const matchDiff = matchOrder[a.matchType] - matchOrder[b.matchType];
+      if (matchDiff !== 0) return matchDiff;
+
+      // Then by city proximity
+      if (!city && myCity) {
+        const aCity = (a.location?.city?.toLowerCase() || '') === myCity ? 0 : 1;
+        const bCity = (b.location?.city?.toLowerCase() || '') === myCity ? 0 : 1;
+        return aCity - bCity;
+      }
+
+      return 0;
+    });
+
+    res.json(enrichedResults);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

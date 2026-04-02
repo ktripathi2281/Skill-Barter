@@ -100,6 +100,38 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
+.match-perfect {
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.05);
+}
+
+.match-partial {
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.05);
+}
+
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 0.5rem;
+  width: fit-content;
+}
+
+.match-badge-perfect {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--color-success);
+}
+
+.match-badge-partial {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--color-accent);
+}
+
 .user-card-header {
   display: flex;
   align-items: center;

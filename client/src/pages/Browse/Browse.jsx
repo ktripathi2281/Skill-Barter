@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
-import { Search, MapPin, MessageCircle, Filter } from 'lucide-react';
+import { Search, MapPin, MessageCircle, Filter, Sparkles, Zap } from 'lucide-react';
 import './Browse.css';
 
 const CATEGORIES = [
@@ -133,7 +133,21 @@ const Browse = () => {
       ) : (
         <div className="users-grid">
           {users.map((u) => (
-            <div key={u._id} className="user-card glass-card animate-fade-in" id={`user-${u._id}`}>
+            <div key={u._id} className={`user-card glass-card animate-fade-in ${u.matchType === 'perfect' ? 'match-perfect' : u.matchType === 'partial' ? 'match-partial' : ''}`} id={`user-${u._id}`}>
+              {/* Match Badge */}
+              {u.matchType === 'perfect' && (
+                <div className="match-badge match-badge-perfect">
+                  <Sparkles size={14} />
+                  Perfect Match
+                </div>
+              )}
+              {u.matchType === 'partial' && (
+                <div className="match-badge match-badge-partial">
+                  <Zap size={14} />
+                  Partial Match
+                </div>
+              )}
+
               <div className="user-card-header">
                 <div className="user-avatar">
                   {u.avatar ? (
