@@ -364,24 +364,31 @@ const Chat = () => {
             </div>
 
             {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="message-input-form" id="message-input-form">
-              <input
-                type="text"
-                className="message-input"
-                placeholder="Type a message..."
-                value={newMessage}
-                onChange={handleTyping}
-                id="input-message"
-              />
-              <button
-                type="submit"
-                className="btn btn-primary send-btn"
-                disabled={!newMessage.trim()}
-                id="btn-send"
-              >
-                <Send size={18} />
-              </button>
-            </form>
+            {activeConversation.status === 'cancelled' ? (
+              <div className="chat-disabled-notice">
+                <X size={16} />
+                This trade was cancelled. Chat is disabled.
+              </div>
+            ) : (
+              <form onSubmit={handleSendMessage} className="message-input-form" id="message-input-form">
+                <input
+                  type="text"
+                  className="message-input"
+                  placeholder="Type a message..."
+                  value={newMessage}
+                  onChange={handleTyping}
+                  id="input-message"
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary send-btn"
+                  disabled={!newMessage.trim()}
+                  id="btn-send"
+                >
+                  <Send size={18} />
+                </button>
+              </form>
+            )}
           </>
         )}
       </div>
