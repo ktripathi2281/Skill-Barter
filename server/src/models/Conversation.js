@@ -28,6 +28,12 @@ const conversationSchema = new mongoose.Schema(
         ref: 'User',
       },
     ],
+    completedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     lastMessage: {
       type: String,
       default: '',

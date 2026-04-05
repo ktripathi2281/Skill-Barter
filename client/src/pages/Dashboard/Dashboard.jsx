@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import { Plus, Trash2, Sparkles, Target, BookOpen } from 'lucide-react';
+import { Plus, Trash2, Sparkles, Target, BookOpen, GraduationCap, Loader } from 'lucide-react';
 import './Dashboard.css';
 
 const CATEGORIES = [
@@ -13,7 +14,9 @@ const LEVELS = ['Beginner', 'Intermediate', 'Advanced', 'Expert'];
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [skills, setSkills] = useState([]);
+  const [learningData, setLearningData] = useState({ currentlyLearning: [], alreadyLearned: [] });
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,13 +33,20 @@ const Dashboard = () => {
       setSkills(data);
     } catch (err) {
       console.error('Failed to fetch skills:', err);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchLearningData = async () => {
+    try {
+      const { data } = await api.get('/conversations/learning');
+      setLearningData(data);
+    } catch (err) {
+      console.error('Failed to fetch learning data:', err);
     }
   };
 
   useEffect(() => {
-    fetchSkills();
+    Promise.all([fetchSkills(), fetchLearningData()]).finally(() => setLoading(false));
   }, []);
 
   const handleSubmit = async (e) => {
@@ -80,7 +90,7 @@ const Dashboard = () => {
           <Sparkles size={28} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 8, color: 'var(--color-accent)' }} />
           Welcome, {user?.name?.split(' ')[0] || 'there'}!
         </h1>
-        <p>Manage your skills and find perfect trades</p>
+        <p>Manage your skills and track your learning journey</p>
       </div>
 
       {/* Stats */}
@@ -103,7 +113,89 @@ const Dashboard = () => {
             <div className="stat-label">Skills Wanted</div>
           </div>
         </div>
+        <div className="stat-card glass-card">
+          <div className="stat-icon" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
+            <Loader size={20} color="#3b82f6" />
+          </div>
+          <div>
+            <div className="stat-number">{learningData.currentlyLearning.length}</div>
+            <div className="stat-label">Currently Learning</div>
+          </div>
+        </div>
+        <div className="stat-card glass-card">
+          <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.15)' }}>
+            <GraduationCap size={20} color="#10b981" />
+          </div>
+          <div>
+            <div className="stat-number">{learningData.alreadyLearned.length}</div>
+            <div className="stat-label">Already Learned</div>
+          </div>
+        </div>
       </div>
+
+      {/* Currently Learning Section */}
+      {learningData.currentlyLearning.length > 0 && (
+        <div className="skills-section learning-section">
+          <h2 className="section-title">
+            <Loader size={20} />
+            Currently Learning
+          </h2>
+          <div className="skills-grid">
+            {learningData.currentlyLearning.map((item) => (
+              <div
+                key={item.conversationId}
+                className="skill-card glass-card learning-card animate-slide-in"
+                onClick={() => navigate(`/chat/${item.conversationId}`)}
+                style={{ cursor: 'pointer' }}
+              >
+                <div className="learning-badge learning">
+                  <Loader size={12} />
+                  In Progress
+                </div>
+                <h4>{item.skill?.name || 'Skill'}</h4>
+                {item.skill?.category && (
+                  <span className={`badge badge-${item.skill.category}`}>{item.skill.category}</span>
+                )}
+                <div className="learning-teacher">
+                  <span className="text-muted">Learning from</span>
+                  <strong>{item.teacher?.name || 'Unknown'}</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Already Learned Section */}
+      {learningData.alreadyLearned.length > 0 && (
+        <div className="skills-section learned-section">
+          <h2 className="section-title">
+            <GraduationCap size={20} />
+            Already Learned
+          </h2>
+          <div className="skills-grid">
+            {learningData.alreadyLearned.map((item) => (
+              <div
+                key={item.conversationId}
+                className="skill-card glass-card learned-card animate-slide-in"
+              >
+                <div className="learning-badge learned">
+                  <GraduationCap size={12} />
+                  {item.tradeCompleted ? 'Completed' : 'Marked Complete'}
+                </div>
+                <h4>{item.skill?.name || 'Skill'}</h4>
+                {item.skill?.category && (
+                  <span className={`badge badge-${item.skill.category}`}>{item.skill.category}</span>
+                )}
+                <div className="learning-teacher">
+                  <span className="text-muted">Learned from</span>
+                  <strong>{item.teacher?.name || 'Unknown'}</strong>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Add Skill Button */}
       <button

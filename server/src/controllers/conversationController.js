@@ -110,11 +110,24 @@ const updateConversationStatus = async (req, res) => {
       // Either party can cancel immediately
       conversation.status = 'cancelled';
     } else if (status === 'completed') {
-      conversation.status = 'completed';
+      // Two-way completion — add this user to completedBy
+      if (!conversation.completedBy.includes(req.user._id)) {
+        conversation.completedBy.push(req.user._id);
+      }
+
+      // Check if BOTH participants have completed
+      const bothCompleted = conversation.participants.every((p) =>
+        conversation.completedBy.some((c) => c.toString() === p.toString())
+      );
+
+      if (bothCompleted) {
+        conversation.status = 'completed';
+      }
     }
 
     await conversation.save();
 
+    // Update active conversation with full response (includes acceptedBy + completedBy)
     res.json(conversation);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -171,6 +184,70 @@ const markAsRead = async (req, res) => {
   }
 };
 
+// @route   GET /api/conversations/learning
+// @desc    Get currently learning (active trades) and already learned (completed by me) skills
+const getLearningData = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    // Active conversations where the user is a participant
+    const activeConversations = await Conversation.find({
+      participants: userId,
+      status: 'active',
+    })
+      .populate('participants', 'name avatar')
+      .populate('skillOffered', 'name category')
+      .populate('skillRequested', 'name category');
+
+    // Conversations where this user has marked complete (they're in completedBy)
+    // This includes ones where status is still 'active' (only they completed)
+    // AND ones where status is 'completed' (both completed)
+    const completedByMeConversations = await Conversation.find({
+      participants: userId,
+      completedBy: userId,
+    })
+      .populate('participants', 'name avatar')
+      .populate('skillOffered', 'name category')
+      .populate('skillRequested', 'name category');
+
+    // For each conversation, figure out what skill the current user is learning
+    // If user is participants[0] (creator), they learn the skillRequested.
+    // If user is participants[1] (receiver), they learn the skillOffered.
+    const currentlyLearning = activeConversations
+      .filter((c) => !c.completedBy.some((id) => id.toString() === userId.toString()))
+      .map((conv) => {
+        const other = conv.participants.find((p) => p._id.toString() !== userId.toString());
+        const isCreator = conv.participants[0]._id.toString() === userId.toString();
+        const learnedSkill = isCreator ? conv.skillRequested : conv.skillOffered;
+        
+        return {
+          conversationId: conv._id,
+          skill: learnedSkill,
+          teacher: other,
+          startedAt: conv.updatedAt,
+        };
+      });
+
+    const alreadyLearned = completedByMeConversations.map((conv) => {
+      const other = conv.participants.find((p) => p._id.toString() !== userId.toString());
+      const isCreator = conv.participants[0]._id.toString() === userId.toString();
+      const learnedSkill = isCreator ? conv.skillRequested : conv.skillOffered;
+      
+      return {
+        conversationId: conv._id,
+        skill: learnedSkill,
+        teacher: other,
+        completedAt: conv.updatedAt,
+        tradeCompleted: conv.status === 'completed',
+      };
+    });
+
+    res.json({ currentlyLearning, alreadyLearned });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   createConversation,
   getConversations,
@@ -178,4 +255,5 @@ module.exports = {
   updateConversationStatus,
   getUnreadCounts,
   markAsRead,
+  getLearningData,
 };

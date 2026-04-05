@@ -172,11 +172,11 @@ const Chat = () => {
     if (!activeConversation) return;
     try {
       const { data } = await api.patch(`/conversations/${activeConversation._id}/status`, { status });
-      // Update active conversation with full response (includes acceptedBy)
-      setActiveConversation((prev) => ({ ...prev, status: data.status, acceptedBy: data.acceptedBy }));
+      // Update active conversation with full response (includes acceptedBy + completedBy)
+      setActiveConversation((prev) => ({ ...prev, status: data.status, acceptedBy: data.acceptedBy, completedBy: data.completedBy }));
       // Update in the list
       setConversations((prev) =>
-        prev.map((c) => (c._id === activeConversation._id ? { ...c, status: data.status, acceptedBy: data.acceptedBy } : c))
+        prev.map((c) => (c._id === activeConversation._id ? { ...c, status: data.status, acceptedBy: data.acceptedBy, completedBy: data.completedBy } : c))
       );
     } catch (err) {
       console.error('Failed to update status:', err);
@@ -312,17 +312,31 @@ const Chat = () => {
                     </>
                   );
                 })()}
-                {activeConversation.status === 'active' && (
-                  <button
-                    className="btn btn-complete btn-sm"
-                    onClick={() => handleUpdateStatus('completed')}
-                    title="Mark Trade as Complete"
-                    id="btn-complete-trade"
-                  >
-                    <Handshake size={14} />
-                    Complete
-                  </button>
-                )}
+                {activeConversation.status === 'active' && (() => {
+                  const iHaveCompleted = activeConversation.completedBy?.some(
+                    (id) => id.toString() === user._id
+                  );
+
+                  if (iHaveCompleted) {
+                    return (
+                      <span className="trade-status-label waiting">
+                        <Check size={14} /> Waiting for partner to complete...
+                      </span>
+                    );
+                  }
+
+                  return (
+                    <button
+                      className="btn btn-complete btn-sm"
+                      onClick={() => handleUpdateStatus('completed')}
+                      title="Mark Trade as Complete"
+                      id="btn-complete-trade"
+                    >
+                      <Handshake size={14} />
+                      Mark Complete
+                    </button>
+                  );
+                })()}
                 {activeConversation.status === 'completed' && (
                   <span className="trade-status-label completed">
                     <Check size={14} /> Trade Completed

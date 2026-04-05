@@ -95,3 +95,58 @@
 .skill-card h4 {
   font-size: 1rem;
 }
+
+/* Learning & Learned Sections */
+.learning-section .section-title {
+  color: #3b82f6;
+  border-bottom-color: rgba(59, 130, 246, 0.2);
+}
+
+.learned-section .section-title {
+  color: #10b981;
+  border-bottom-color: rgba(16, 185, 129, 0.2);
+}
+
+.learning-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 0.25rem;
+  width: fit-content;
+}
+
+.learning-badge.learning {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.learning-badge.learned {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.learning-teacher {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border);
+  font-size: 0.85rem;
+}
+
+.learning-card {
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.learning-card:hover {
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+}
+
+.learned-card {
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}

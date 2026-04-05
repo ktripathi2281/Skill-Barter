@@ -52,6 +52,7 @@ const register = async (req, res) => {
       refreshToken,
     });
   } catch (error) {
+    console.error('Register error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -92,6 +93,7 @@ const login = async (req, res) => {
       refreshToken,
     });
   } catch (error) {
+    console.error('Login error:', error);
     res.status(500).json({ message: error.message });
   }
 };
