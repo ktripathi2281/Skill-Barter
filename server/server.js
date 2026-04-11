@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const { rateLimit } = require('express-rate-limit');
 const { Server } = require('socket.io');
 const connectDB = require('./src/config/db');
 const setupSocket = require('./src/socket/socketHandler');
@@ -31,8 +32,27 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Rate Limiting
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again later.' },
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // Stricter limit for login/register
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many login attempts, please try again after 15 minutes.' },
+});
+
+app.use('/api', globalLimiter);
+
 // API Routes
-app.use('/api/auth', require('./src/routes/authRoutes'));
+app.use('/api/auth', authLimiter, require('./src/routes/authRoutes'));
 app.use('/api/users', require('./src/routes/userRoutes'));
 app.use('/api/skills', require('./src/routes/skillRoutes'));
 app.use('/api/conversations', require('./src/routes/conversationRoutes'));
