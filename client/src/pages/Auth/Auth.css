@@ -90,3 +90,50 @@
   font-size: 0.85rem;
   color: var(--color-text-muted);
 }
+
+/* OTP Verification Styles */
+.otp-inputs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.otp-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  caret-color: var(--color-brand);
+}
+
+.otp-input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.otp-resend {
+  text-align: center;
+  margin-top: 1.25rem;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-brand);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}

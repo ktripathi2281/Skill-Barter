@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import VerifyOTP from './pages/Auth/VerifyOTP';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Browse from './pages/Browse/Browse';
 import Chat from './pages/Chat/Chat';
@@ -20,6 +21,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-otp" element={<VerifyOTP />} />
 
             {/* Protected Routes */}
             <Route

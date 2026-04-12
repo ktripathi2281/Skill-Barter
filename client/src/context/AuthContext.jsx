@@ -46,17 +46,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password, city) => {
     const { data } = await api.post('/auth/register', { name, email, password, city });
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
-
-    const userData = {
-      _id: data._id,
-      name: data.name,
-      email: data.email,
-      location: { city },
-    };
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+    // No auto-login — user must verify OTP first
     return data;
   };
 

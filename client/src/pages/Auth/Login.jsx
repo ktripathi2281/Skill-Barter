@@ -21,7 +21,12 @@ const Login = () => {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      const data = err.response?.data;
+      if (data?.needsVerification) {
+        navigate('/verify-otp', { state: { userId: data.userId, email } });
+      } else {
+        setError(data?.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

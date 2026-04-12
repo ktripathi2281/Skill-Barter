@@ -39,8 +39,8 @@ const Register = () => {
     setLoading(true);
 
     try {
-      await register(name, email, password, city);
-      navigate('/dashboard');
+      const data = await register(name, email, password, city);
+      navigate('/verify-otp', { state: { userId: data.userId, email } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {
